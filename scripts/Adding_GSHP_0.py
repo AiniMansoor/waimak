@@ -109,7 +109,8 @@ def add_well(m, lon, lat, elv, q):
     """ add a well to a model, using NZTM and masl coordinates"""
     # finding location of the well
     lay, row, col = smt.convert_coords_to_matix(lon, lat, elv)
-
+    if lay % 2== 0:
+        lay = lay -1 
     # add row to wel array
     temp_wel_data = m.wel.stress_period_data.data[0]
     temp_wel_data.resize(temp_wel_data.shape[0], refcheck=False) # probably a better way to do this
@@ -168,13 +169,22 @@ def plot_cod(name0, name1):
 
     ## With Conductivity ##
     f, ax = plt.subplots()
-    modelmap = flopy.plot.ModelMap(model=m, ax=ax, layer=0)
-    cv = modelmap.contour_array(h_diff[0], levels=np.linspace(0.,5., 10), linewidths=0.5,colors="black")
+    modelmap = flopy.plot.ModelMap(model=m, ax=ax, layer=4)
+    cv = modelmap.contour_array(h_diff[4], levels=np.linspace(0.,5., 10), linewidths=0.5,colors="black")
     k = modelmap.plot_array(np.log(m.upw.hk[0].array), cmap = "jet", vmin=-2, vmax=8, alpha=0.5)
     cb = plt.colorbar(k, extend = 'both')
     cb.ax.set_title('log(K)', fontsize = 'small')
     plt.clabel(cv, fmt="%2.1f", fontsize='x-small')
 
+    '''    plt.figure(2)
+    ax = plt.subplots()
+    modelmap = flopy.plot.ModelMap(model=m, ax=ax, layer=4)
+    cv = modelmap.contour_array(h_diff[0], levels=np.linspace(0.,5., 10), linewidths=0.5,colors="black")
+    k = modelmap.plot_array(np.log(m.upw.hk[0].array), cmap = "jet", vmin=-2, vmax=8, alpha=0.5)
+    cb = plt.colorbar(k, extend = 'both')
+    cb.ax.set_title('log(K)', fontsize = 'small')
+    plt.clabel(cv, fmt="%2.1f", fontsize='x-small')
+    '''
     ## With Basemap ##
     #f, ax = smt.plt_matrix(array=h_diff[0], title="Cone of Depression", base_map=True, color_bar=False)
     plt.show()
@@ -184,21 +194,21 @@ def main():
 
     name = "test0"
 
-    m = import_model(name)
+    #m = import_model(name)
     m = load_model("test0")
     run_model(m)
     m_copy = copy_model(m, "copy0")
     # plotting_example(m, name)
     gshp_abs, gshp_inj = gshp_well_data()
-    for i in range (0, len(gshp_abs)):
+    for i in range (0,1):
         """Loop through each col to get lon, lat, q and elv"""
-        add_well(m_copy, gshp_abs.loc[i,'NZTMX'], gshp_abs.loc[i,'NZTMY'], gshp_abs.loc[i,'Depth'], -60*60*24*gshp_abs.loc[i,'Max Rate']/1000)
+        add_well(m_copy, gshp_abs.loc[i,'NZTMX'], gshp_abs.loc[i,'NZTMY'], -gshp_abs.loc[i,'Adjusted Depth'], -60*60*24*gshp_abs.loc[i,'Max Rate']/1000)
         i=i+1
-    for i in range (0, len(gshp_inj)):
-        """Loop through each col to get lon, lat, q and elv"""
-        add_well(m_copy, gshp_inj.loc[i,'NZTMX'], gshp_inj.loc[i,'NZTMY'], gshp_inj.loc[i,'Depth'], 60*60*24*gshp_inj.loc[i,'Max Rate']/1000)
-        i=i+1
-    #yadd_well(m_copy, 1560354, 5204192, 48, -100000)
+    '''        for i in range (0, len(gshp_inj)):
+            """Loop through each col to get lon, lat, q and elv"""
+            add_well(m_copy, gshp_inj.loc[i,'NZTMX'], gshp_inj.loc[i,'NZTMY'], -gshp_inj.loc[i,'Adjusted Depth'], 60*60*24*gshp_inj.loc[i,'Max Rate']/1000)
+            i=i+1
+    '''        #yadd_well(m_copy, 1560354, 5204192, 48, -100000)
     run_model(m_copy)
     plot_cod("test0", "copy0")
 
